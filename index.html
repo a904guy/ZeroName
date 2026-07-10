@@ -1,0 +1,1067 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZeroName: invisible domain attribution tags</title>
+<meta name="author" content="Andy Hawkins, Hawkins.Tech (hawkins.tech)">
+<meta name="description" content="ZeroName hides a website domain inside a visible name using invisible, passphrase-keyed Unicode codepoints, so a leaked name reveals which site leaked it. By Andy Hawkins, Hawkins.Tech.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e14'/%3E%3Crect x='2.5' y='2.5' width='59' height='59' rx='12' fill='none' stroke='%2322e0d6' stroke-width='2'/%3E%3Ctext x='32' y='46' font-family='monospace' font-size='40' font-weight='700' text-anchor='middle' fill='%2322e0d6'%3E0%3C/text%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ZeroName: invisible domain attribution tags">
+<meta property="og:description" content="Hide a site domain inside a visible name using invisible, passphrase-keyed Unicode. If the name leaks, find out which site leaked it. Single self-contained page, no dependencies.">
+<meta property="og:url" content="https://a904guy.github.io/ZeroName/">
+<meta property="og:image" content="https://a904guy.github.io/ZeroName/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ZeroName: invisible domain attribution tags">
+<meta name="twitter:description" content="Hide a site domain inside a visible name using invisible, passphrase-keyed Unicode. If the name leaks, find out which site leaked it.">
+<meta name="twitter:image" content="https://a904guy.github.io/ZeroName/og.png">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --panel: #111823;
+    --panel-2: #0d141d;
+    --border: #1e2b3a;
+    --text: #d7e0ea;
+    --muted: #7a8899;
+    --accent: #22e0d6;
+    --accent-dim: #0e9c95;
+    --ok: #3ff08a;
+    --bad: #ff5b6e;
+    --mono: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background:
+      radial-gradient(1100px 600px at 15% -10%, rgba(34,224,214,0.08), transparent 60%),
+      radial-gradient(900px 500px at 95% 0%, rgba(34,224,214,0.05), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 56px 20px 96px;
+  }
+
+  header.hero { margin-bottom: 34px; }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(2.1rem, 6vw, 3rem);
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  h1 .zero { color: var(--accent); }
+
+  .tagline {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 0 0 22px;
+  }
+
+  .lede {
+    color: var(--muted);
+    font-size: 1.02rem;
+    margin: 0;
+  }
+
+  .usecase {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 26px 26px;
+    margin-top: 28px;
+  }
+  .usecase h2 {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    margin: 0 0 4px;
+  }
+  .usecase .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+  .usecase ol {
+    list-style: none;
+    counter-reset: step;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .usecase li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 42px;
+    min-height: 28px;
+    color: #b6c2d0;
+    font-size: 0.98rem;
+    line-height: 1.5;
+  }
+  .usecase li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    display: grid;
+    place-items: center;
+  }
+  .usecase li:last-child { color: var(--text); }
+  .usecase li b { color: var(--accent); font-weight: 600; }
+  .lede strong { color: var(--text); font-weight: 600; }
+
+  .card {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 26px 28px;
+    margin-top: 28px;
+    box-shadow:
+      0 0 0 1px rgba(34,224,214,0.04),
+      0 0 34px rgba(34,224,214,0.06),
+      inset 0 1px 0 rgba(255,255,255,0.02);
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .card:focus-within {
+    border-color: var(--accent-dim);
+    box-shadow:
+      0 0 0 1px rgba(34,224,214,0.18),
+      0 0 44px rgba(34,224,214,0.14),
+      inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  .card h2 {
+    font-family: var(--mono);
+    font-size: 1.15rem;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card h2 .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .card .sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0 0 20px;
+  }
+
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 16px 0 6px;
+  }
+
+  input[type="text"], input[type="password"], textarea {
+    width: 100%;
+    background: #070b11;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 1rem;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  input:focus, textarea:focus {
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 3px rgba(34,224,214,0.12);
+  }
+  textarea { resize: vertical; min-height: 62px; line-height: 1.5; }
+  .mono-field { font-family: var(--mono); font-size: 0.95rem; }
+
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row > div { flex: 1 1 200px; min-width: 0; }
+
+  button {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: transform 0.08s ease, filter 0.15s ease, background 0.15s ease;
+  }
+  button:active { transform: translateY(1px); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #04120f;
+    font-weight: 700;
+    margin-top: 20px;
+    box-shadow: 0 0 22px rgba(34,224,214,0.28);
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+
+  .btn-ghost {
+    background: #0c1620;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+  }
+  .btn-ghost:hover { border-color: var(--accent-dim); }
+
+  /* GitHub / repo links */
+  .gh-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 22px 0 4px;
+  }
+  .gh-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    text-decoration: none;
+    color: var(--text);
+    background: #0c1620;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 15px;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .gh-link:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .gh-link svg { width: 16px; height: 16px; flex: 0 0 auto; }
+  .gh-link .count {
+    color: var(--muted);
+    border-left: 1px solid var(--border);
+    padding-left: 8px;
+    margin-left: 2px;
+  }
+  .gh-link.star:hover { color: #ffd23f; border-color: rgba(255,210,63,0.5); }
+  .gh-link.star:hover svg { color: #ffd23f; }
+
+  .star-cta {
+    margin-top: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    flex-wrap: wrap;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 26px;
+    box-shadow: 0 0 0 1px rgba(34,224,214,0.04), 0 0 30px rgba(34,224,214,0.05);
+  }
+  .star-cta h2 {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    margin: 0 0 4px;
+  }
+  .star-cta p { color: var(--muted); font-size: 0.92rem; margin: 0; max-width: 46ch; }
+  .star-cta .gh-link {
+    background: var(--accent);
+    color: #04120f;
+    border-color: var(--accent);
+    font-weight: 700;
+    padding: 12px 20px;
+    white-space: nowrap;
+  }
+  .star-cta .gh-link:hover { color: #04120f; filter: brightness(1.08); }
+
+  /* Preset chips */
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 18px;
+  }
+  .presets-label {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text);
+    background: #0c1620;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 13px;
+  }
+  .chip:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .chip.clear { color: var(--muted); }
+  .chip.clear:hover { color: var(--bad); border-color: rgba(255,91,110,0.5); }
+  .chip.clear.armed {
+    color: #fff;
+    background: var(--bad);
+    border-color: var(--bad);
+  }
+  .chip.clear.armed:hover { color: #fff; border-color: var(--bad); filter: brightness(1.08); }
+
+  /* Reveal toggle + payload visualizer */
+  .reveal-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  /* accessible but visually hidden native checkbox */
+  .switch-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px; height: 1px;
+    margin: 0;
+    pointer-events: none;
+  }
+  .switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 44px; height: 24px;
+    box-sizing: border-box;
+    background: #0c1620;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 50%; left: 3px;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .switch-input:checked + .switch {
+    background: rgba(34,224,214,0.22);
+    border-color: var(--accent-dim);
+  }
+  .switch-input:checked + .switch::after {
+    transform: translateY(-50%) translateX(20px);
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(34,224,214,0.6);
+  }
+  .switch-input:focus-visible + .switch {
+    box-shadow: 0 0 0 3px rgba(34,224,214,0.28);
+  }
+  .viz {
+    margin-top: 12px;
+    background: #070b11;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .viz .viz-name {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    line-height: 1.9;
+    word-break: break-all;
+    color: var(--text);
+  }
+  .viz .hchar {
+    color: var(--accent);
+    opacity: 0.9;
+  }
+  .viz .viz-bytes {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    color: var(--muted);
+    word-break: break-all;
+    line-height: 1.7;
+  }
+  .viz .viz-bytes b { color: var(--accent); font-weight: 400; }
+  .viz .viz-empty { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); }
+
+  .output-wrap { margin-top: 20px; }
+  .output-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: 6px;
+  }
+  .output-head label { margin: 0; }
+  .payload-count {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--accent);
+    background: rgba(34,224,214,0.08);
+    border: 1px solid rgba(34,224,214,0.2);
+    border-radius: 6px;
+    padding: 2px 8px;
+    max-width: 100%;
+  }
+  .output-row { display: flex; gap: 10px; align-items: stretch; }
+  .output-row input { flex: 1; }
+
+  .result {
+    margin-top: 20px;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    word-break: break-all;
+  }
+  .result.empty { display: none; }
+
+  .status-icon {
+    flex: 0 0 auto;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    animation: pop 0.22s ease;
+  }
+  @keyframes pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .status-icon.ok {
+    color: var(--ok);
+    border: 2px solid var(--ok);
+    box-shadow: 0 0 22px rgba(63,240,138,0.35);
+    background: rgba(63,240,138,0.08);
+  }
+  .status-icon.bad {
+    color: var(--bad);
+    border: 2px solid var(--bad);
+    box-shadow: 0 0 22px rgba(255,91,110,0.3);
+    background: rgba(255,91,110,0.08);
+  }
+
+  .result .text { font-family: var(--mono); font-size: 1rem; min-width: 0; }
+  .result .ok { color: var(--ok); font-size: 1.15rem; }
+  .result .bad { color: var(--bad); font-size: 1.05rem; }
+  .result .label {
+    color: var(--muted);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .hint { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
+  .optional { color: var(--muted); text-transform: none; letter-spacing: 0; font-size: 0.9em; }
+  .toast {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ok);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    margin-left: 10px;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Technical section */
+  .tech {
+    margin-top: 56px;
+    border-top: 1px solid var(--border);
+    padding-top: 40px;
+  }
+  .tech h2 {
+    font-family: var(--mono);
+    font-size: 1.35rem;
+    margin: 0 0 6px;
+  }
+  .tech h3 {
+    font-family: var(--mono);
+    font-size: 1rem;
+    color: var(--accent);
+    margin: 30px 0 8px;
+  }
+  .tech p, .tech li { color: #b6c2d0; font-size: 0.96rem; }
+  .tech ol, .tech ul { padding-left: 22px; }
+  .tech li { margin: 6px 0; }
+  .tech code {
+    font-family: var(--mono);
+    background: #0c1620;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 0.86em;
+    color: var(--accent);
+  }
+  .tech .caveat {
+    background: rgba(255,91,110,0.06);
+    border: 1px solid rgba(255,91,110,0.22);
+    border-radius: 12px;
+    padding: 4px 20px;
+    margin-top: 18px;
+  }
+  .tech .caveat h3 { color: var(--bad); }
+
+  footer {
+    margin-top: 48px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-family: var(--mono);
+    text-align: center;
+  }
+  footer p { margin: 6px 0; }
+  footer .credit { color: #8fa0b2; }
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(34,224,214,0.35);
+  }
+  footer a:hover { border-bottom-color: var(--accent); }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 36px 16px 72px; }
+    .output-row { flex-direction: column; }
+    .btn-ghost { width: 100%; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <h1><span class="zero">Zero</span>Name</h1>
+    <p class="tagline">invisible domain attribution tags</p>
+    <div class="gh-links">
+      <a class="gh-link" href="https://github.com/a904guy/ZeroName" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+      <a class="gh-link star" href="https://github.com/a904guy/ZeroName" target="_blank" rel="noopener" aria-label="Star ZeroName on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.784 1.401 8.168L12 18.896l-7.335 3.866 1.401-8.168L.132 9.21l8.2-1.192z"/></svg>
+        Star
+      </a>
+    </div>
+    <p class="lede">
+      ZeroName hides a website's domain inside a visible name using invisible Unicode
+      codepoints. You enter your name and the site you are giving it to, and it returns a
+      name that looks the same on screen but contains a hidden, passphrase-keyed payload.
+      If that name later shows up in spam or a breach dump, paste it into the decoder to
+      see which site leaked it. The domain is stored in the tag, so there is no database
+      or lookup table to maintain.
+    </p>
+  </header>
+
+  <section class="usecase">
+    <h2>How you'd use it</h2>
+    <p class="sub">The whole point: find out which website leaked your details.</p>
+    <ol>
+      <li>When a website asks for your name at signup, run your name through the encoder with that site's domain, and register using the <b>tagged name</b> it gives you. It looks exactly like your real name.</li>
+      <li>The website stores that name and uses it when it emails you, greeting you by name.</li>
+      <li>Weeks or months later, you get spam, a marketing blast, or a phishing email addressed to that same name.</li>
+      <li>Copy the name out of that email and paste it into the decoder. It reveals the domain hidden inside the name: the website that leaked, sold, or lost your data.</li>
+    </ol>
+  </section>
+
+  <!-- ENCODER -->
+  <section class="card" aria-labelledby="enc-title">
+    <h2 id="enc-title"><span class="dot"></span>Encoder</h2>
+    <p class="sub">Hide a keyed domain tag inside a name.</p>
+
+    <div class="presets">
+      <span class="presets-label">Try</span>
+      <button type="button" class="chip" data-name="Ada Lovelace" data-domain="example.com" data-pass="hunter2">Ada Lovelace · example.com</button>
+      <button type="button" class="chip" data-name="Noah" data-domain="linkedin.com" data-pass="s3cret">Noah · linkedin.com</button>
+      <button type="button" class="chip clear" id="enc-clear">Clear</button>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="enc-name">Name (visible)</label>
+        <input type="text" id="enc-name" placeholder="Ada Lovelace" autocomplete="off" spellcheck="false">
+      </div>
+      <div>
+        <label for="enc-domain">Site domain</label>
+        <input type="text" id="enc-domain" placeholder="example.com" autocomplete="off" spellcheck="false" class="mono-field">
+      </div>
+    </div>
+
+    <label for="enc-pass">Passphrase <span class="optional">(optional)</span></label>
+    <input type="password" id="enc-pass" placeholder="leave blank for an unkeyed tag" autocomplete="off" spellcheck="false">
+
+    <button class="btn-primary" id="enc-btn">Encode tag</button>
+
+    <div class="output-wrap">
+      <div class="output-head">
+        <label for="enc-out">Tagged name</label>
+        <span class="payload-count" id="enc-count">payload: 0 bytes · 0 chars</span>
+      </div>
+      <div class="output-row">
+        <input type="text" id="enc-out" class="mono-field" readonly placeholder="same text, with the hidden tag">
+        <button class="btn-ghost" id="enc-copy">Copy</button>
+      </div>
+      <p class="hint">Looks the same as the plain name. Copy preserves the invisible characters.<span class="toast" id="enc-toast">copied</span></p>
+
+      <label class="reveal-toggle">
+        <input type="checkbox" id="enc-reveal" class="switch-input">
+        <span class="switch" aria-hidden="true"></span>
+        <span>Reveal hidden characters</span>
+      </label>
+      <div class="viz" id="enc-viz" hidden></div>
+    </div>
+  </section>
+
+  <!-- DECODER -->
+  <section class="card" aria-labelledby="dec-title">
+    <h2 id="dec-title"><span class="dot"></span>Decoder</h2>
+    <p class="sub">Recover the hidden domain from a tagged name.</p>
+
+    <label for="dec-name">Tagged name</label>
+    <textarea id="dec-name" class="mono-field" placeholder="Paste the suspicious name here" autocomplete="off" spellcheck="false"></textarea>
+
+    <label for="dec-pass">Passphrase <span class="optional">(optional)</span></label>
+    <input type="password" id="dec-pass" placeholder="leave blank if the tag was unkeyed" autocomplete="off" spellcheck="false">
+
+    <button class="btn-primary" id="dec-btn">Decode tag</button>
+
+    <div class="result empty" id="dec-result" aria-live="polite"></div>
+  </section>
+
+  <!-- TECHNICAL -->
+  <section class="tech">
+    <h2>How it works</h2>
+    <p>
+      ZeroName is an attribution tool. It does not keep anything secret. It marks a name with a
+      hidden tag so you can identify which recipient leaked your contact details. This section
+      describes what the encoder and decoder do.
+    </p>
+
+    <h3>The invisible codepoints</h3>
+    <p>
+      The payload is stored in two ranges of zero-width characters. They display nothing but
+      survive copy and paste as normal text:
+    </p>
+    <ul>
+      <li><code>U+FE00 … U+FE0F</code>, Variation Selectors 1–16 (VS1–VS16), hold byte values <code>0–15</code>.</li>
+      <li><code>U+E0100 … U+E01EF</code>, Variation Selectors Supplement, hold byte values <code>16–255</code>.</li>
+    </ul>
+    <p>
+      Variation selectors normally select a glyph variant of the character before them. When there
+      is no such variant, they display as nothing. They are also normalization-stable: they have no
+      compatibility decomposition, so NFC and NFD leave them unchanged. NFKC does remove them, which
+      is covered in the caveats.
+    </p>
+
+    <h3>Encoding</h3>
+    <ol>
+      <li>UTF-8 encode the domain into bytes.</li>
+      <li>Compute a checksum byte by XORing every domain byte together, and append it as the final payload byte.</li>
+      <li>Derive a keystream from <code>SHA-256(passphrase)</code> using <code>crypto.subtle.digest</code>, then repeat those 32 bytes as needed to cover the payload.</li>
+      <li>XOR each payload byte (domain bytes and checksum) with the matching keystream byte.</li>
+      <li>Map each resulting byte to one invisible codepoint: <code>0–15</code> to <code>U+FE00 + b</code>, and <code>16–255</code> to <code>U+E0100 + (b − 16)</code>.</li>
+    </ol>
+    <p>
+      This produces one invisible codepoint per payload byte. A 12-byte domain plus its checksum
+      becomes 13 hidden characters.
+    </p>
+
+    <h3>Interleaving between the letters</h3>
+    <p>
+      The hidden characters are placed in the gaps between the visible letters, never before the
+      first letter and never after the last. They are spread evenly across those gaps, so hidden
+      character <code>k</code> is attached to the letter at <code>floor(k × gaps ÷ payload)</code>.
+      Encoding the domain <code>linkedin</code> into the name <code>Noah</code> places three
+      invisible bytes in each gap, giving <code>N•••o•••a•••h</code>, where each <code>•</code> is
+      an invisible byte attached to the letter before it.
+    </p>
+    <p>
+      The placement is monotonic, so the hidden characters stay in payload order. Decoding does not
+      depend on where they sit: it reads the string by codepoint, collects the characters in the two
+      invisible ranges in order, and that sequence is the payload. There is a single copy of the
+      payload, so if any hidden character is lost, the checksum fails.
+    </p>
+    <p>
+      A name needs at least two visible characters to have a gap. If it has only one, the payload is
+      appended after it.
+    </p>
+
+    <h3>The keyed XOR keystream</h3>
+    <p>
+      SHA-256 turns the passphrase into 32 bytes. Those bytes are cycled across the payload and
+      XORed with it, and the same passphrase produces the same keystream to reverse the operation.
+      Without the passphrase the bytes do not decode, and a tag made with a different passphrase will
+      not decode against yours. This is obfuscation rather than encryption. A repeating-keystream XOR
+      can be broken by anyone who knows the scheme and has enough samples. It stops the domain from
+      being read directly, but it does not resist analysis.
+    </p>
+
+    <h3>The checksum</h3>
+    <p>
+      The last payload byte is a checksum. On decode, the XOR of the recovered domain bytes is
+      compared against it. If a character was added, a byte was changed, or the passphrase is wrong,
+      the values differ and the decoder reports <code>Invalid or stripped tag</code> instead of
+      showing an incorrect domain. It is a one-byte check and does not correct errors.
+    </p>
+
+    <div class="caveat">
+      <h3>Caveats</h3>
+      <ul>
+        <li>Compatibility normalization (NFKC) removes variation selectors. Any system that applies it, including many search indexes, some databases, and identity systems, discards the tag.</li>
+        <li>Strict input fields can reject it. A <code>maxlength</code> that counts codepoints, or a validator that allows only letters or ASCII, will truncate or refuse the hidden bytes.</li>
+        <li>The tag survives only where text is kept exactly as entered, such as email greeting lines, CRM notes, and breach dumps of stored data.</li>
+        <li>OCR and retyping destroy it. Anything that rebuilds the text from what is displayed, such as a screenshot run through OCR or a person retyping the name, keeps only the visible characters.</li>
+        <li>It is not secure. The scheme is public and the cipher is weak, so treat a decoded domain as an indication of a likely leak source rather than proof.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="star-cta">
+    <div>
+      <h2>Find this useful?</h2>
+      <p>ZeroName is open source and lives on GitHub. If you think it is neat or handy, a star helps other people find it.</p>
+    </div>
+    <a class="gh-link star" href="https://github.com/a904guy/ZeroName" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.784 1.401 8.168L12 18.896l-7.335 3.866 1.401-8.168L.132 9.21l8.2-1.192z"/></svg>
+      Star on GitHub
+    </a>
+  </section>
+
+  <footer>
+    <p>ZeroName · runs in your browser · no network · no storage</p>
+    <p><a href="https://github.com/a904guy/ZeroName" target="_blank" rel="noopener">Source on GitHub</a> · <a href="https://github.com/a904guy/ZeroName/issues" target="_blank" rel="noopener">Report an issue</a></p>
+    <p class="credit">Created by Andy Hawkins from <a href="https://hawkins.tech" target="_blank" rel="noopener">Hawkins.Tech</a></p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- core codec ---------- */
+
+const VS1_BASE = 0xFE00;      // holds bytes 0..15   -> U+FE00 .. U+FE0F
+const VSSUP_BASE = 0xE0100;   // holds bytes 16..255 -> U+E0100 .. U+E01EF
+
+async function keystream(passphrase, length) {
+  const data = new TextEncoder().encode(passphrase);
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
+  const out = new Uint8Array(length);
+  for (let i = 0; i < length; i++) out[i] = digest[i % digest.length];
+  return out;
+}
+
+function byteToCodepoint(b) {
+  return b <= 15 ? VS1_BASE + b : VSSUP_BASE + (b - 16);
+}
+
+// returns byte 0..255 for an in-range codepoint, or -1 otherwise
+function codepointToByte(cp) {
+  if (cp >= VS1_BASE && cp <= VS1_BASE + 15) return cp - VS1_BASE;
+  if (cp >= VSSUP_BASE && cp <= VSSUP_BASE + 239) return (cp - VSSUP_BASE) + 16;
+  return -1;
+}
+
+// Build the keyed payload bytes (domain + checksum) for a domain string.
+//   [ domain bytes... ][ CHECKSUM ]   where CHECKSUM = XOR of the domain bytes,
+// the whole thing XOR'd against the cycled SHA-256 keystream.
+async function buildPayloadBytes(domain, passphrase) {
+  const domainBytes = new TextEncoder().encode(domain);
+
+  let checksum = 0;
+  for (const b of domainBytes) checksum ^= b;
+
+  const payload = new Uint8Array(domainBytes.length + 1);
+  payload.set(domainBytes, 0);
+  payload[domainBytes.length] = checksum;
+
+  const ks = await keystream(passphrase, payload.length);
+  for (let i = 0; i < payload.length; i++) payload[i] ^= ks[i];
+  return payload;
+}
+
+async function encode(name, domain, passphrase) {
+  if (!domain) return { tagged: name, payloadBytes: 0, payloadChars: 0 };
+
+  const payload = await buildPayloadBytes(domain, passphrase);
+  const hidden = [];
+  for (const b of payload) hidden.push(String.fromCodePoint(byteToCodepoint(b)));
+  const P = hidden.length;
+
+  // Anchor positions = the internal gaps between visible characters. We take the
+  // non-space characters and drop the LAST one, so hidden chars only ever land
+  // *between* letters, never trailing the final character.
+  const visible = [...name];
+  const nonSpace = [];
+  visible.forEach((ch, i) => { if (!/\s/.test(ch)) nonSpace.push(i); });
+  const anchors = nonSpace.slice(0, -1);
+
+  if (anchors.length === 0) {
+    // Zero or one visible character, so there is no internal gap; append the payload.
+    return { tagged: name + hidden.join(""), payloadBytes: P, payloadChars: P };
+  }
+
+  // Interleave the payload evenly across the internal gaps: hidden char k is
+  // appended after the anchor at floor(k * anchors / P). The mapping is monotonic
+  // in k, so the hidden chars stay in payload order in the string, and decoding
+  // filters them back out in reading order.
+  const after = new Map(); // visible index -> concatenated hidden chars
+  for (let k = 0; k < P; k++) {
+    const idx = anchors[Math.floor((k * anchors.length) / P)];
+    after.set(idx, (after.get(idx) || "") + hidden[k]);
+  }
+
+  let tagged = "";
+  visible.forEach((ch, i) => {
+    tagged += ch;
+    if (after.has(i)) tagged += after.get(i);
+  });
+
+  return { tagged, payloadBytes: P, payloadChars: P };
+}
+
+async function decode(taggedName, passphrase) {
+  // Iterate by codepoint (never by index, since these are astral). Filter out our
+  // invisible codepoints in reading order; that sequence is the payload.
+  const bytes = [];
+  for (const ch of taggedName) {
+    const b = codepointToByte(ch.codePointAt(0));
+    if (b >= 0) bytes.push(b);
+  }
+  if (bytes.length < 2) return { ok: false };
+
+  const payload = new Uint8Array(bytes);
+  const ks = await keystream(passphrase, payload.length);
+  for (let i = 0; i < payload.length; i++) payload[i] ^= ks[i];
+
+  const domainBytes = payload.slice(0, payload.length - 1);
+  const checksum = payload[payload.length - 1];
+
+  let calc = 0;
+  for (const b of domainBytes) calc ^= b;
+  if (calc !== checksum) return { ok: false };
+
+  try {
+    const domain = new TextDecoder("utf-8", { fatal: true }).decode(domainBytes);
+    return { ok: true, domain };
+  } catch (e) {
+    return { ok: false };
+  }
+}
+
+/* ---------- UI wiring ---------- */
+
+const $ = (id) => document.getElementById(id);
+
+// Arm the Clear button (red) whenever any encoder/decoder field has content.
+function updateClearState() {
+  const filled = ["enc-name", "enc-domain", "enc-pass", "dec-name", "dec-pass"]
+    .some((id) => $(id).value.length > 0);
+  $("enc-clear").classList.toggle("armed", filled);
+}
+
+async function refreshEncode() {
+  const name = $("enc-name").value;
+  const domain = $("enc-domain").value.trim();
+  const pass = $("enc-pass").value;
+
+  const { tagged, payloadBytes, payloadChars } = await encode(name, domain, pass);
+  $("enc-out").value = tagged;
+  $("enc-count").textContent =
+    `payload: ${payloadBytes} byte${payloadBytes === 1 ? "" : "s"} · ${payloadChars} hidden char${payloadChars === 1 ? "" : "s"}`;
+  renderViz();
+  updateClearState();
+}
+
+// Renders the tagged name with each invisible codepoint shown as a dot, plus the
+// hidden bytes in hex, so the otherwise-invisible payload is made visible.
+function renderViz() {
+  const viz = $("enc-viz");
+  if (!$("enc-reveal").checked) { viz.hidden = true; return; }
+  viz.hidden = false;
+
+  const tagged = $("enc-out").value;
+  if (!tagged) {
+    viz.innerHTML = '<span class="viz-empty">Encode a name and domain to see its hidden bytes.</span>';
+    return;
+  }
+
+  let nameHtml = "";
+  const bytesHex = [];
+  for (const ch of tagged) {
+    const b = codepointToByte(ch.codePointAt(0));
+    if (b >= 0) {
+      nameHtml += '<span class="hchar">•</span>';
+      bytesHex.push(b.toString(16).padStart(2, "0"));
+    } else {
+      nameHtml += escapeHtml(ch);
+    }
+  }
+  const bytesLine = bytesHex.length
+    ? `<b>${bytesHex.length}</b> hidden byte${bytesHex.length === 1 ? "" : "s"} (hex): ${bytesHex.join(" ")}`
+    : "no hidden bytes yet";
+  viz.innerHTML = '<div class="viz-name">' + nameHtml + '</div><div class="viz-bytes">' + bytesLine + '</div>';
+}
+
+$("enc-btn").addEventListener("click", refreshEncode);
+["enc-name", "enc-domain", "enc-pass"].forEach((id) =>
+  $(id).addEventListener("input", refreshEncode)
+);
+$("enc-reveal").addEventListener("change", renderViz);
+
+// Preset chips fill the encoder, encode, and run the same values back through the
+// decoder so a first-time visitor sees the full round trip light up.
+document.querySelectorAll(".chip[data-name]").forEach((chip) => {
+  chip.addEventListener("click", async () => {
+    $("enc-name").value = chip.dataset.name;
+    $("enc-domain").value = chip.dataset.domain;
+    $("enc-pass").value = chip.dataset.pass;
+    await refreshEncode();
+    $("dec-name").value = $("enc-out").value;
+    $("dec-pass").value = chip.dataset.pass;
+    await refreshDecode();
+  });
+});
+
+// Clear button resets both cards; updateClearState (via the refreshes) disarms it.
+$("enc-clear").addEventListener("click", async () => {
+  ["enc-name", "enc-domain", "enc-pass", "dec-name", "dec-pass"].forEach((id) => { $(id).value = ""; });
+  $("enc-reveal").checked = false;
+  await refreshEncode();
+  await refreshDecode();
+});
+
+$("enc-copy").addEventListener("click", async () => {
+  const text = $("enc-out").value;
+  if (!text) return;
+  const toast = $("enc-toast");
+  const done = () => { toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 1400); };
+  try {
+    await navigator.clipboard.writeText(text); // preserves invisible codepoints
+    done();
+  } catch (e) {
+    // fallback for file:// / no-permission contexts
+    const out = $("enc-out");
+    out.removeAttribute("readonly");
+    out.focus(); out.select();
+    try { document.execCommand("copy"); done(); } catch (_) {}
+    out.setAttribute("readonly", "");
+  }
+});
+
+// Guards against out-of-order async updates while typing fast.
+let decSeq = 0;
+
+async function refreshDecode() {
+  const name = $("dec-name").value;
+  const pass = $("dec-pass").value;
+  const box = $("dec-result");
+  const seq = ++decSeq;
+  updateClearState();
+
+  if (!name.trim()) {
+    box.className = "result empty";
+    box.innerHTML = "";
+    return;
+  }
+
+  const res = await decode(name, pass);
+  if (seq !== decSeq) return; // a newer keystroke already superseded this run
+
+  if (res.ok) {
+    box.className = "result";
+    box.innerHTML =
+      '<span class="status-icon ok" aria-hidden="true">✓</span>' +
+      '<span class="text"><span class="label">Leak traced to</span>' +
+      '<span class="ok">' + escapeHtml(res.domain) + '</span></span>';
+  } else {
+    box.className = "result";
+    box.innerHTML =
+      '<span class="status-icon bad" aria-hidden="true">✕</span>' +
+      '<span class="text bad">Invalid or stripped tag</span>';
+  }
+}
+
+$("dec-btn").addEventListener("click", refreshDecode);
+["dec-name", "dec-pass"].forEach((id) =>
+  $(id).addEventListener("input", refreshDecode)
+);
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
+}
+
+/* ---------- inline self-tests (round-trip), logged to console ---------- */
+(async function selfTest() {
+  const cases = [
+    ["Ada Lovelace", "example.com", "hunter2"],
+    ["Grace Hopper ", "sub.domain.co.uk", "correct horse"],
+    ["七海", "münchen.de", "pässwörd🔑"],           // non-ASCII name, domain, and passphrase
+    ["Trailing spaces   ", "a.io", ""],              // empty passphrase
+    ["X", "x", "k"],                                 // single-byte domain
+  ];
+  let pass = 0;
+  for (const [name, domain, phrase] of cases) {
+    const { tagged } = await encode(name, domain, phrase);
+    const back = await decode(tagged, phrase);
+    const ok = back.ok && back.domain === domain;
+    if (ok) pass++;
+    console.log(`[ZeroName self-test] ${ok ? "PASS" : "FAIL"}  "${domain}" via "${phrase}"`, ok ? "" : back);
+  }
+
+  // wrong passphrase must fail the checksum gate
+  const { tagged: t } = await encode("Bob", "secret-site.com", "right-key");
+  const wrong = await decode(t, "wrong-key");
+  const negOk = !wrong.ok;
+  console.log(`[ZeroName self-test] ${negOk ? "PASS" : "FAIL"}  wrong passphrase rejected`, negOk ? "" : wrong);
+
+  // stripped tag (visible name only) must fail
+  const stripped = await decode("Bob", "right-key");
+  const stripOk = !stripped.ok;
+  console.log(`[ZeroName self-test] ${stripOk ? "PASS" : "FAIL"}  stripped tag rejected`, stripOk ? "" : stripped);
+
+  // the visible text must be byte-identical once the invisible chars are filtered out,
+  // and the hidden chars must actually be interleaved (not all trailing the name).
+  const { tagged: it } = await encode("Ada Lovelace", "example.com", "hunter2");
+  const visibleBack = [...it].filter((ch) => codepointToByte(ch.codePointAt(0)) < 0).join("");
+  const visOk = visibleBack === "Ada Lovelace";
+  const cpsArr = [...it];
+  const isHidden = (ch) => codepointToByte(ch.codePointAt(0)) >= 0;
+  const firstHidden = cpsArr.findIndex(isHidden);
+  // hidden chars must sit strictly between letters: first char visible, last char visible.
+  const interleaved = firstHidden > 0 && !isHidden(cpsArr[0]) && !isHidden(cpsArr[cpsArr.length - 1]);
+  console.log(`[ZeroName self-test] ${visOk ? "PASS" : "FAIL"}  visible text preserved`, visOk ? "" : visibleBack);
+  console.log(`[ZeroName self-test] ${interleaved ? "PASS" : "FAIL"}  payload between letters, none trailing`, interleaved ? "" : cpsArr.map((c) => (isHidden(c) ? "•" : c)).join(""));
+
+  const total = cases.length + 4;
+  const good = pass + (negOk ? 1 : 0) + (stripOk ? 1 : 0) + (visOk ? 1 : 0) + (interleaved ? 1 : 0);
+  console.log(`[ZeroName self-test] ${good}/${total} passed`);
+})();
+</script>
